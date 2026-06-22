@@ -84,6 +84,8 @@ type ProxyRule struct {
 	// AuthSecretName is a reference to an image pull secret (must be .dockerconfigjson type) which
 	// will be used to authenticate if `checkUpstream` is set. Unused if not specified or `checkUpstream` is false.
 	AuthSecretName string `yaml:"authSecretName"`
+	// PullPolicyAlways enabled will set the pull policy to always.
+	PullPolicyAlways bool `yaml:"pullPolicyAlways"`
 	// Namespace that the webhook is running in, used for accessing secrets for authenticated proxy rules
 	Namespace string
 }

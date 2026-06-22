@@ -76,6 +76,8 @@ type ContainerTransformer interface {
 	// CheckUpstream ensures that the docker image reference exists in the upstream registry
 	// and returns if the image exists, or an error if the registry can't be contacted.
 	CheckUpstream(ctx context.Context, imageRef string) (bool, error)
+
+	RewritePullPolicy(policy corev1.PullPolicy) corev1.PullPolicy
 }
 
 func MakeTransformers(rules []config.ProxyRule, client client.Client) ([]ContainerTransformer, error) {
@@ -221,6 +223,14 @@ func (t *ruleTransformer) auth(ctx context.Context, imageRef string) (authn.Auth
 	}
 
 	return nil, fmt.Errorf("failed to parse auth secret %q, no docker config found", t.rule.AuthSecretName)
+}
+
+func (t *ruleTransformer) RewritePullPolicy(policy corev1.PullPolicy) corev1.PullPolicy {
+	if t.rule.PullPolicyAlways {
+		return corev1.PullAlways
+	}
+
+	return policy
 }
 
 func (t *ruleTransformer) RewriteImage(imageRef string) (string, error) {

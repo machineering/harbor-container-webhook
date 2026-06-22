@@ -84,6 +84,13 @@ func (p *PodContainerProxier) updateContainers(ctx context.Context, containers [
 			logger.Info(fmt.Sprintf("rewriting the image of %q from %q to %q", container.Name, container.Image, imageRef))
 		}
 		container.Image = imageRef
+
+		policy, err := p.rewritePullPolicy(container.ImagePullPolicy)
+		if err != nil {
+			return []corev1.Container{}, false, err
+		}
+		container.ImagePullPolicy = policy
+
 		containersReplacement = append(containersReplacement, container)
 	}
 	return containersReplacement, updated, nil
@@ -108,6 +115,18 @@ func (p *PodContainerProxier) rewriteImage(ctx context.Context, imageRef string)
 		}
 	}
 	return imageRef, nil
+}
+
+func (p *PodContainerProxier) rewritePullPolicy(pullPolicy corev1.PullPolicy) (corev1.PullPolicy, error) {
+	for _, transformer := range p.Transformers {
+		updatedPolicy := transformer.RewritePullPolicy(pullPolicy)
+
+		if updatedPolicy != pullPolicy {
+			logger.Info(fmt.Sprintf("transformer %q rewriting %q to %q", transformer.Name(), pullPolicy, updatedPolicy))
+			return updatedPolicy, nil
+		}
+	}
+	return pullPolicy, nil
 }
 
 // PodContainerProxier implements admission.DecoderInjector.
